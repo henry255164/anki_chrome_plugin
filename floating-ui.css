@@ -1,6 +1,11 @@
 /* floating-ui.css */
 
-/* --- Theme Variable Definitions --- */
+/*
+ * ===================================
+ * Theme & Globals
+ * ===================================
+ */
+
 @media (prefers-color-scheme: light) {
   :root {
     --anki-bg-color: #ffffff;
@@ -21,7 +26,12 @@
   }
 }
 
-/* --- Component Styles (using variables) --- */
+/*
+ * ===================================
+ * Main Clipper Window
+ * ===================================
+ */
+
 #anki-clipper-container {
   /* Structure */
   position: fixed;
@@ -62,9 +72,57 @@
 #anki-clipper-container .content {
   padding: 10px;
   flex-grow: 1;
+  min-height: 0;
+  /* Crucial for child flex layouts */
 }
 
-/* --- Selection Toolbar Styles --- */
+/*
+ * ===================================
+ * Form Elements (Inside Window)
+ * ===================================
+ */
+
+.anki-clipper-content-flex {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+}
+
+.anki-field-group {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.anki-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.anki-textarea {
+  width: 100%;
+  flex-grow: 1;
+  box-sizing: border-box;
+  border: 1px solid var(--anki-border-color);
+  background-color: var(--anki-bg-color);
+  color: var(--anki-text-color);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+/*
+ * ===================================
+ * Selection Toolbar (Q/A Popup)
+ * ===================================
+ */
+
 #anki-selection-toolbar {
   position: absolute;
   z-index: 10000;
@@ -93,6 +151,5 @@
 
 .anki-toolbar-btn:hover {
   background-color: var(--anki-header-bg-color);
-  /* A slightly more prominent border on hover */
   border-color: var(--anki-text-color);
 }

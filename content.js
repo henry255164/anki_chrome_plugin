@@ -73,39 +73,75 @@ document.addEventListener('mouseup', (event) => {
       btn1.className = 'anki-toolbar-btn';
       btn1.textContent = 'Q';
       btn1.title = 'Add to Question'; // Tooltip
+      btn1.addEventListener('click', () => {
+        const questionField = document.getElementById('anki-question-field');
+        const selectedText = window.getSelection().toString();
+        if (questionField.value.length > 0) {
+          questionField.value += '\n' + selectedText;
+        } else {
+          questionField.value = selectedText;
+        }
+        removeToolbar();
+      });
 
       const btn2 = document.createElement('button');
       btn2.className = 'anki-toolbar-btn';
       btn2.textContent = 'A';
       btn2.title = 'Add to Answer'; // Tooltip
+      btn2.addEventListener('click', () => {
+        const answerField = document.getElementById('anki-answer-field');
+        const selectedText = window.getSelection().toString();
+        if (answerField.value.length > 0) {
+          answerField.value += '\n' + selectedText;
+        } else {
+          answerField.value = selectedText;
+        }
+        removeToolbar();
+      });
 
       toolbar.appendChild(btn1);
       toolbar.appendChild(btn2);
 
       // --- Toolbar Positioning Logic ---
-      // Append temporarily to calculate height, but keep it invisible
+      const gtxIcon = document.getElementById('gtx-trans');
+
+      // Append temporarily to calculate dimensions, but keep it invisible
       toolbar.style.visibility = 'hidden';
       document.body.appendChild(toolbar);
       const toolbarHeight = toolbar.offsetHeight;
+      const toolbarWidth = toolbar.offsetWidth;
       document.body.removeChild(toolbar); // Remove it before final placement
       toolbar.style.visibility = 'visible';
 
-      const spaceAbove = rect.top;
       const margin = 10; // Margin from the selection
-
       let topPosition;
 
-      // Decide whether to place the toolbar above or below the selection
-      if (spaceAbove > toolbarHeight + margin) {
-        // Prefer to place it above
-        topPosition = window.scrollY + rect.top - toolbarHeight - margin;
-      } else {
-        // Otherwise, place it below
+      // If Google Translate icon is present, ALWAYS position below to avoid conflict.
+      if (gtxIcon) {
         topPosition = window.scrollY + rect.bottom + margin;
+      } else {
+        // Otherwise, use the smart positioning (above or below based on space)
+        const spaceAbove = rect.top;
+        if (spaceAbove > toolbarHeight + margin) {
+          topPosition = window.scrollY + rect.top - toolbarHeight - margin;
+        } else {
+          topPosition = window.scrollY + rect.bottom + margin;
+        }
+      }
+
+      // Horizontal positioning (centered, with boundary checks)
+      let leftPosition = window.scrollX + rect.left + (rect.width / 2) - (toolbarWidth / 2);
+
+      // Clamp left position to stay within viewport
+      if (leftPosition < window.scrollX + margin) {
+        leftPosition = window.scrollX + margin;
+      }
+      if (leftPosition + toolbarWidth > window.scrollX + window.innerWidth - margin) {
+        leftPosition = window.scrollX + window.innerWidth - toolbarWidth - margin;
       }
 
       toolbar.style.top = `${topPosition}px`;
-      toolbar.style.left = `${window.scrollX + rect.left}px`;
+      toolbar.style.left = `${leftPosition}px`;
 
       document.body.appendChild(toolbar);
     }
@@ -118,7 +154,7 @@ document.addEventListener('mousedown', (event) => {
   if (toolbar && !toolbar.contains(event.target)) {
     const selection = window.getSelection();
     if (selection.isCollapsed) {
-        removeToolbar();
+      removeToolbar();
     }
   }
 });
