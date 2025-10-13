@@ -1,160 +1,21 @@
-// content.js
+// content.js (Injector and Bridge Script)
 
-const CONTAINER_ID = 'anki-clipper-container';
-const TOOLBAR_ID = 'anki-selection-toolbar';
+// 1. Inject the main script as a module into the page.
+// This is the standard method for using ES modules in content scripts for Manifest V3.
+(function() {
+  const script = document.createElement('script');
+  script.type = 'module';
+  script.src = chrome.runtime.getURL('main.js');
+  (document.head || document.documentElement).appendChild(script);
+})();
 
-// --- Main UI Management --- //
-
-// Listen for messages from the background script to toggle the main UI
+// 2. Act as a bridge to pass messages from the background script to the page script.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'toggle_ui') {
-    toggleUI();
+    // Get the URL from the extension's context
+    const url = chrome.runtime.getURL('floating-ui.html');
+    // Forward the message and the URL to the page context
+    window.dispatchEvent(new CustomEvent('toggle_anki_clipper_ui', { detail: { htmlUrl: url } }));
   }
-});
-
-function toggleUI() {
-  const existingUI = document.getElementById(CONTAINER_ID);
-  if (existingUI) {
-    existingUI.remove();
-    removeToolbar(); // Also remove toolbar when main UI is closed
-  } else {
-    createUI();
-  }
-}
-
-async function createUI() {
-  const container = document.createElement('div');
-  container.id = CONTAINER_ID;
-
-  try {
-    const uiHtmlUrl = chrome.runtime.getURL('floating-ui.html');
-    const response = await fetch(uiHtmlUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch UI content: ${response.statusText}`);
-    }
-    container.innerHTML = await response.text();
-    document.body.appendChild(container);
-  } catch (error) {
-    console.error('Anki Clipper Error:', error);
-  }
-}
-
-// --- Selection Toolbar Management --- //
-
-function removeToolbar() {
-  const existingToolbar = document.getElementById(TOOLBAR_ID);
-  if (existingToolbar) {
-    existingToolbar.remove();
-  }
-}
-
-// Show toolbar on text selection
-document.addEventListener('mouseup', (event) => {
-  // Only show toolbar if the main UI is active
-  if (!document.getElementById(CONTAINER_ID)) {
-    return;
-  }
-
-  // Use a timeout to allow the selection to be finalized
-  setTimeout(() => {
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-
-    removeToolbar(); // Remove any existing toolbar first
-
-    if (selectedText.length > 0) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-
-      const toolbar = document.createElement('div');
-      toolbar.id = TOOLBAR_ID;
-
-      const btn1 = document.createElement('button');
-      btn1.className = 'anki-toolbar-btn';
-      btn1.textContent = 'Q';
-      btn1.title = 'Add to Question'; // Tooltip
-      btn1.addEventListener('click', () => {
-        const questionField = document.getElementById('anki-question-field');
-        const selectedText = window.getSelection().toString();
-        if (questionField.value.length > 0) {
-          questionField.value += '\n' + selectedText;
-        } else {
-          questionField.value = selectedText;
-        }
-        removeToolbar();
-      });
-
-      const btn2 = document.createElement('button');
-      btn2.className = 'anki-toolbar-btn';
-      btn2.textContent = 'A';
-      btn2.title = 'Add to Answer'; // Tooltip
-      btn2.addEventListener('click', () => {
-        const answerField = document.getElementById('anki-answer-field');
-        const selectedText = window.getSelection().toString();
-        if (answerField.value.length > 0) {
-          answerField.value += '\n' + selectedText;
-        } else {
-          answerField.value = selectedText;
-        }
-        removeToolbar();
-      });
-
-      toolbar.appendChild(btn1);
-      toolbar.appendChild(btn2);
-
-      // --- Toolbar Positioning Logic ---
-      const gtxIcon = document.getElementById('gtx-trans');
-
-      // Append temporarily to calculate dimensions, but keep it invisible
-      toolbar.style.visibility = 'hidden';
-      document.body.appendChild(toolbar);
-      const toolbarHeight = toolbar.offsetHeight;
-      const toolbarWidth = toolbar.offsetWidth;
-      document.body.removeChild(toolbar); // Remove it before final placement
-      toolbar.style.visibility = 'visible';
-
-      const margin = 10; // Margin from the selection
-      let topPosition;
-
-      // If Google Translate icon is present, ALWAYS position below to avoid conflict.
-      if (gtxIcon) {
-        topPosition = window.scrollY + rect.bottom + margin;
-      } else {
-        // Otherwise, use the smart positioning (above or below based on space)
-        const spaceAbove = rect.top;
-        if (spaceAbove > toolbarHeight + margin) {
-          topPosition = window.scrollY + rect.top - toolbarHeight - margin;
-        } else {
-          topPosition = window.scrollY + rect.bottom + margin;
-        }
-      }
-
-      // Horizontal positioning (centered, with boundary checks)
-      let leftPosition = window.scrollX + rect.left + (rect.width / 2) - (toolbarWidth / 2);
-
-      // Clamp left position to stay within viewport
-      if (leftPosition < window.scrollX + margin) {
-        leftPosition = window.scrollX + margin;
-      }
-      if (leftPosition + toolbarWidth > window.scrollX + window.innerWidth - margin) {
-        leftPosition = window.scrollX + window.innerWidth - toolbarWidth - margin;
-      }
-
-      toolbar.style.top = `${topPosition}px`;
-      toolbar.style.left = `${leftPosition}px`;
-
-      document.body.appendChild(toolbar);
-    }
-  }, 10); // A small delay can help prevent race conditions
-});
-
-// Hide toolbar when clicking elsewhere
-document.addEventListener('mousedown', (event) => {
-  const toolbar = document.getElementById(TOOLBAR_ID);
-  if (toolbar && !toolbar.contains(event.target)) {
-    const selection = window.getSelection();
-    if (selection.isCollapsed) {
-      removeToolbar();
-    }
-  }
+  return true;
 });

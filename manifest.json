@@ -32,7 +32,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "floating-ui.html"
+        "floating-ui.html",
+        "main.js",
+        "modules/toolbar.js",
+        "modules/ui.js"
       ],
       "matches": [
         "<all_urls>"
