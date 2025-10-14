@@ -14,7 +14,68 @@ chrome.action.onClicked.addListener((tab) => {
         // console.warn("Anki Clipper: Message sending failed: " + chrome.runtime.lastError.message);
       }
     });
-  } else {
-    console.error("Anki Clipper: Could not get active tab ID.");
   }
 });
+
+// Listen for messages from content scripts
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'addAnkiNote') {
+    addNote(request.payload)
+      .then(response => sendResponse(response))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Indicates that the response is sent asynchronously
+  }
+});
+
+// --- AnkiConnect API Call ---
+
+/**
+ * Adds a note to Anki using the AnkiConnect API.
+ * @param {object} noteData - The data for the note, e.g., { Front, Back }.
+ * @returns {Promise<object>} A promise that resolves to a success or error object.
+ */
+async function addNote(noteData) {
+  const ankiConnectUrl = 'http://127.0.0.1:8765';
+  const body = {
+    action: "addNote",
+    version: 6,
+    params: {
+      note: {
+        deckName: "Default",
+        modelName: "Basic",
+        fields: {
+          Front: noteData.Front,
+          Back: noteData.Back
+        },
+        tags: ["anki-web-clipper"]
+      }
+    }
+  };
+
+  try {
+    const response = await fetch(ankiConnectUrl, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    const jsonResponse = await response.json();
+
+    if (jsonResponse.error) {
+      throw new Error(`AnkiConnect error: ${jsonResponse.error}`);
+    }
+
+    return { success: true, result: jsonResponse.result };
+
+  } catch (error) {
+    console.error('AnkiConnect request failed:', error);
+    // A common error is failing to fetch, which can mean Anki is not running.
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return { success: false, error: 'Failed to connect to Anki. Is Anki with AnkiConnect running?' };
+    }
+    return { success: false, error: error.message };
+  }
+}

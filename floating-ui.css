@@ -13,6 +13,10 @@
     --anki-border-color: #cccccc;
     --anki-header-bg-color: #f5f5f5;
     --anki-shadow-color: rgba(0, 0, 0, 0.15);
+    --anki-button-bg-color: #007aff;
+    --anki-button-text-color: #ffffff;
+    --anki-button-hover-bg-color: #005ecb;
+    --anki-status-msg-color: #666;
   }
 }
 
@@ -23,6 +27,10 @@
     --anki-border-color: #4a4a4f;
     --anki-header-bg-color: #3c3c40;
     --anki-shadow-color: rgba(0, 0, 0, 0.3);
+    --anki-button-bg-color: #0a84ff;
+    --anki-button-text-color: #ffffff;
+    --anki-button-hover-bg-color: #0060c0;
+    --anki-status-msg-color: #aaa;
   }
 }
 
@@ -152,4 +160,24 @@
 .anki-toolbar-btn:hover {
   background-color: var(--anki-header-bg-color);
   border-color: var(--anki-text-color);
+}
+
+.anki-submit-btn {
+  padding: 8px 16px;
+  border: none;
+  background-color: var(--anki-button-bg-color);
+  color: var(--anki-button-text-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.anki-submit-btn:hover {
+  background-color: var(--anki-button-hover-bg-color);
+}
+
+.anki-status-msg {
+  font-size: 12px;
+  color: var(--anki-status-msg-color);
 }

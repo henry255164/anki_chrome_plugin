@@ -10,6 +10,7 @@
 })();
 
 // 2. Act as a bridge to pass messages from the background script to the page script.
+// This listener handles messages from the background script (e.g., toggle UI).
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'toggle_ui') {
     // Get the URL from the extension's context
@@ -18,4 +19,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     window.dispatchEvent(new CustomEvent('toggle_anki_clipper_ui', { detail: { htmlUrl: url } }));
   }
   return true;
+});
+
+// This listener handles messages from the page script (e.g., add Anki note).
+window.addEventListener('anki_add_note', (event) => {
+  if (event.detail) {
+    // Send the note data to the background script for AnkiConnect API call.
+    chrome.runtime.sendMessage({ action: 'addAnkiNote', payload: event.detail }, (response) => {
+      // Forward the response from the background script back to the page script.
+      window.dispatchEvent(new CustomEvent('anki_add_note_response', { detail: response }));
+    });
+  }
 });
