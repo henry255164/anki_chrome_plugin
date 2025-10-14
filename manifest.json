@@ -35,7 +35,8 @@
         "floating-ui.html",
         "main.js",
         "modules/toolbar.js",
-        "modules/ui.js"
+        "modules/ui.js",
+        "modules/image.js"
       ],
       "matches": [
         "<all_urls>"

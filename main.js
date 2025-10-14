@@ -2,6 +2,10 @@
 
 import { toggleUI } from './modules/ui.js';
 import { showToolbar, removeToolbar } from './modules/toolbar.js';
+import { processImage } from './modules/image.js';
+
+// --- Module-level state ---
+let capturedImage = { url: null, base64: null };
 
 // --- Global Event Listeners ---
 
@@ -28,6 +32,14 @@ window.addEventListener('anki_add_note_response', (event) => {
       const answerField = document.getElementById('anki-answer-field');
       if (questionField) questionField.value = '';
       if (answerField) answerField.value = '';
+      // Clear image preview on success
+      const imagePreviewContainer = document.getElementById('anki-image-preview-container');
+      if (imagePreviewContainer) {
+        const previewImage = document.getElementById('anki-image-preview');
+        previewImage.src = '';
+        imagePreviewContainer.style.display = 'none';
+        capturedImage = { url: null, base64: null };
+      }
     } else {
       statusMsgSpan.textContent = `Error: ${event.detail.error}`;
       statusMsgSpan.style.color = 'red';
@@ -36,13 +48,35 @@ window.addEventListener('anki_add_note_response', (event) => {
 });
 
 // Listen for an image being selected on the page
-window.addEventListener('anki_image_selected', (event) => {
+window.addEventListener('anki_image_selected', async (event) => {
   const previewContainer = document.getElementById('anki-image-preview-container');
   const previewImage = document.getElementById('anki-image-preview');
+  const statusMsgSpan = document.getElementById('anki-status-msg');
 
-  if (previewContainer && previewImage && event.detail.imageUrl) {
-    previewImage.src = event.detail.imageUrl;
-    previewContainer.style.display = 'block';
+  if (previewContainer && previewImage && statusMsgSpan && event.detail.imageUrl) {
+    // Reset state
+    capturedImage = { url: null, base64: null };
+    statusMsgSpan.textContent = 'Processing image...';
+    statusMsgSpan.style.color = '#666';
+
+    try {
+      previewImage.src = event.detail.imageUrl;
+      previewContainer.style.display = 'block';
+
+      const base64 = await processImage(event.detail.imageUrl);
+      capturedImage = {
+        url: event.detail.imageUrl,
+        base64: base64
+      };
+      statusMsgSpan.textContent = 'Image ready.';
+      statusMsgSpan.style.color = 'green';
+
+    } catch (error) {
+      previewImage.src = '';
+      previewContainer.style.display = 'none';
+      statusMsgSpan.textContent = `Error: ${error.message}`;
+      statusMsgSpan.style.color = 'red';
+    }
   }
 });
 
@@ -86,6 +120,7 @@ function attachUIEventListeners(uiContainer) {
       const previewImage = uiContainer.querySelector('#anki-image-preview');
       previewImage.src = '';
       imagePreviewContainer.style.display = 'none';
+      capturedImage = { url: null, base64: null }; // Clear stored image data
     });
   }
 
@@ -103,9 +138,15 @@ function attachUIEventListeners(uiContainer) {
       statusMsgSpan.textContent = 'Submitting...';
       statusMsgSpan.style.color = '#666';
 
+      // Construct payload
+      const payload = { Front: front, Back: back };
+      if (capturedImage.base64) {
+        payload.Picture = capturedImage.base64;
+      }
+
       // Dispatch a custom event to the content script bridge
       window.dispatchEvent(new CustomEvent('anki_add_note', {
-        detail: { Front: front, Back: back }
+        detail: payload
       }));
     });
   }

@@ -36,21 +36,61 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  */
 async function addNote(noteData) {
   const ankiConnectUrl = 'http://127.0.0.1:8765';
-  const body = {
-    action: "addNote",
-    version: 6,
-    params: {
-      note: {
-        deckName: "Default",
-        modelName: "Basic",
-        fields: {
-          Front: noteData.Front,
-          Back: noteData.Back
-        },
-        tags: ["anki-web-clipper"]
+  let body;
+
+  if (noteData.Picture) {
+    // --- Image Submission Logic ---
+    const imageName = `anki-web-clipper-${Date.now()}.jpg`;
+    const backFieldWithImage = `${noteData.Back}<br><img src="${imageName}">`;
+
+    body = {
+      action: "multi",
+      version: 6,
+      params: {
+        actions: [
+          {
+            action: "storeMediaFile",
+            params: {
+              filename: imageName,
+              data: noteData.Picture
+            }
+          },
+          {
+            action: "addNote",
+            params: {
+              note: {
+                deckName: "Default",
+                modelName: "Basic",
+                fields: {
+                  Front: noteData.Front,
+                  Back: backFieldWithImage
+                },
+                tags: ["anki-web-clipper"]
+              }
+            }
+          }
+        ]
       }
-    }
-  };
+    };
+
+  } else {
+    // --- Text-Only Submission Logic ---
+    body = {
+      action: "addNote",
+      version: 6,
+      params: {
+        note: {
+          deckName: "Default",
+          modelName: "Basic",
+          fields: {
+            Front: noteData.Front,
+            Back: noteData.Back
+          },
+          tags: ["anki-web-clipper"]
+        }
+      }
+    };
+  }
 
   try {
     const response = await fetch(ankiConnectUrl, {
@@ -64,7 +104,14 @@ async function addNote(noteData) {
 
     const jsonResponse = await response.json();
 
-    if (jsonResponse.error) {
+    // For 'multi' action, the result is an array. We check for errors in both results.
+    if (Array.isArray(jsonResponse.result)) {
+      if (jsonResponse.result[0]?.error || jsonResponse.result[1]?.error) {
+        const error1 = jsonResponse.result[0]?.error || 'none';
+        const error2 = jsonResponse.result[1]?.error || 'none';
+        throw new Error(`AnkiConnect multi-error: [${error1}, ${error2}]`);
+      }
+    } else if (jsonResponse.error) { // For single addNote
       throw new Error(`AnkiConnect error: ${jsonResponse.error}`);
     }
 

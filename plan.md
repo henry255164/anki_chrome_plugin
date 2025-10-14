@@ -91,32 +91,42 @@ async function processImage(imageUrl) {
 }
 ```
 
-### 2.3. AnkiConnect API 呼叫 (無標籤)
+### 2.3. AnkiConnect API 呼叫
+
+為了同時上傳圖片與建立卡片，我們將使用 `multi` 複合操作，以確保兩個步驟的原子性。
 
 ```json
 {
-  "action": "addNote",
+  "action": "multi",
   "version": 6,
   "params": {
-    "note": {
-      "deckName": "Default",
-      "modelName": "Basic",
-      "fields": {
-        "Front": "問題的 Markdown 內容",
-        "Back": "解答的 Markdown 內容"
-      },
-      "picture": [
-        // 如果有圖片，則加入此物件
-        {
-          "data": "COMPRESSED_BASE64_STRING",
-          "filename": "anki-web-clipper-image.jpg"
+    "actions": [
+      {
+        "action": "storeMediaFile",
+        "params": {
+          "filename": "anki-web-clipper-image.jpg",
+          "data": "COMPRESSED_BASE64_STRING"
         }
-      ]
-    }
+      },
+      {
+        "action": "addNote",
+        "params": {
+          "note": {
+            "deckName": "Default",
+            "modelName": "Basic",
+            "fields": {
+              "Front": "問題的內容",
+              "Back": "解答的內容<br><img src='anki-web-clipper-image.jpg'>"
+            },
+            "tags": ["anki-web-clipper"]
+          }
+        }
+      }
+    ]
   }
 }
 ```
-*注意：`picture` 中的 `fields` 欄位可以省略，AnkiConnect 會自動將圖片附加到第一個合適的欄位。我們仍需在 `Back` 欄位手動插入 `<img>` 標籤。*
+*注意：我們首先使用 `storeMediaFile` 上傳圖片，然後在 `addNote` 的欄位中，透過檔名引用該圖片。*
 
 ## 3. 任務切分 (Task Breakdown)
 
@@ -162,8 +172,9 @@ async function processImage(imageUrl) {
 ### 階段五：完整圖文卡片提交
 *   **任務**:
     1.  整合送出邏輯，使其能同時處理文字與圖片資料。
-    2.  在 `background.js` 中，根據有無圖片來建構不同的 API請求 Body。
-    3.  在解答欄位中正確插入 `<img>` 標籤，使其能引用上傳的圖片檔案。
+    2.  在 `background.js` 中，當偵測到有圖片時，建構一個 `multi` API 請求。
+    3.  在 `multi` 請求中，結合 `storeMediaFile` (上傳圖片) 和 `addNote` (新增卡片) 兩個操作。
+    4.  在 `addNote` 操作的 "Back" 欄位中，正確插入引用圖片的 `<img>` 標籤。
 *   **可驗證性**:
     *   擷取文字和圖片後送出，Anki 中會出現包含文字和正確顯示的壓縮圖片的新卡片。
 
