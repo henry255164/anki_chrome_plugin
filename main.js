@@ -35,6 +35,17 @@ window.addEventListener('anki_add_note_response', (event) => {
   }
 });
 
+// Listen for an image being selected on the page
+window.addEventListener('anki_image_selected', (event) => {
+  const previewContainer = document.getElementById('anki-image-preview-container');
+  const previewImage = document.getElementById('anki-image-preview');
+
+  if (previewContainer && previewImage && event.detail.imageUrl) {
+    previewImage.src = event.detail.imageUrl;
+    previewContainer.style.display = 'block';
+  }
+});
+
 // Listen for text selection to show the toolbar
 document.addEventListener('mouseup', (event) => {
   // Only show toolbar if the main UI is active
@@ -67,6 +78,16 @@ function attachUIEventListeners(uiContainer) {
   const questionField = uiContainer.querySelector('#anki-question-field');
   const answerField = uiContainer.querySelector('#anki-answer-field');
   const statusMsgSpan = uiContainer.querySelector('#anki-status-msg');
+  const imagePreviewContainer = uiContainer.querySelector('#anki-image-preview-container');
+  const removeImageBtn = uiContainer.querySelector('#anki-remove-image-btn');
+
+  if (removeImageBtn && imagePreviewContainer) {
+    removeImageBtn.addEventListener('click', () => {
+      const previewImage = uiContainer.querySelector('#anki-image-preview');
+      previewImage.src = '';
+      imagePreviewContainer.style.display = 'none';
+    });
+  }
 
   if (submitBtn && questionField && answerField && statusMsgSpan) {
     submitBtn.addEventListener('click', () => {

@@ -127,6 +127,54 @@
 
 /*
  * ===================================
+ * Image Preview
+ * ===================================
+ */
+
+#anki-image-preview-container {
+  position: relative;
+  margin-top: 5px;
+  /* Add some space above */
+  flex-shrink: 0;
+  /* Prevent container from shrinking */
+}
+
+#anki-image-preview {
+  width: 100%;
+  max-height: 120px;
+  /* Limit preview height */
+  border-radius: 4px;
+  border: 1px solid var(--anki-border-color);
+  object-fit: contain;
+  background-color: var(--anki-header-bg-color);
+  /* BG for transparent images */
+}
+
+#anki-remove-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--anki-border-color);
+  background-color: rgba(42, 42, 46, 0.8);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 22px;
+  text-align: center;
+  padding: 0;
+  text-shadow: 0 0 2px #000;
+}
+
+#anki-remove-image-btn:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+
+/*
+ * ===================================
  * Selection Toolbar (Q/A Popup)
  * ===================================
  */

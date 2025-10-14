@@ -36,9 +36,27 @@ export function showToolbar() {
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 
+  // --- Image Detection ---
+  let imageUrl = null;
+  if (selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const fragment = range.cloneContents();
+    const imgElement = fragment.querySelector('img');
+    if (imgElement) {
+      // Resolve relative URL to absolute
+      imageUrl = new URL(imgElement.src, window.location.href).href;
+    }
+  }
+
   removeToolbar(); // Remove any existing toolbar first
 
-  if (selectedText.length === 0) return;
+  // Only show toolbar if there is text or an image
+  if (selectedText.length === 0 && !imageUrl) return;
+
+  // Dispatch image event if an image was found
+  if (imageUrl) {
+    window.dispatchEvent(new CustomEvent('anki_image_selected', { detail: { imageUrl } }));
+  }
 
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
