@@ -16,7 +16,7 @@ export function removeToolbar() {
  * Appends the currently selected text to a specified textarea.
  * @param {string} fieldId The ID of the textarea to append to.
  */
-function appendSelectedTextToField(fieldId) {
+export function appendSelectedTextToField(fieldId) {
   const field = document.getElementById(fieldId);
   if (!field) return;
 

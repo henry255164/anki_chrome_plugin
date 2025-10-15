@@ -31,3 +31,14 @@ window.addEventListener('anki_add_note', (event) => {
     });
   }
 });
+
+// Listen for requests for settings from the page script
+window.addEventListener('anki_request_settings', () => {
+  chrome.storage.sync.get({
+    questionHotkey: 'Alt + Q',
+    answerHotkey: 'Alt + A'
+  }, (items) => {
+    // Forward the settings back to the page script
+    window.dispatchEvent(new CustomEvent('anki_receive_settings', { detail: items }));
+  });
+});

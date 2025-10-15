@@ -1,0 +1,113 @@
+/* options.css */
+
+/*
+ * ===================================
+ * Theme & Globals (與 floating-ui.css 共享)
+ * ===================================
+ */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --anki-bg-color: #ffffff;
+    --anki-text-color: #1f1f1f;
+    --anki-border-color: #cccccc;
+    --anki-button-bg-color: #007aff;
+    --anki-button-text-color: #ffffff;
+    --anki-button-hover-bg-color: #005ecb;
+    --anki-status-msg-color: #666;
+    --anki-success-color: #34c759;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --anki-bg-color: #1c1c1e;
+    /* 使用深色模式的頁面背景 */
+    --anki-text-color: #e1e1e3;
+    --anki-border-color: #4a4a4f;
+    --anki-button-bg-color: #0a84ff;
+    --anki-button-text-color: #ffffff;
+    --anki-button-hover-bg-color: #0060c0;
+    --anki-status-msg-color: #aaa;
+    --anki-success-color: #30d158;
+  }
+}
+
+/*
+ * ===================================
+ * Page Layout
+ * ===================================
+ */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 20px 30px;
+  background-color: var(--anki-bg-color);
+  color: var(--anki-text-color);
+}
+
+.container {
+  max-width: 600px;
+}
+
+h1 {
+  border-bottom: 1px solid var(--anki-border-color);
+  padding-bottom: 10px;
+  margin-top: 0;
+}
+
+p {
+  color: var(--anki-status-msg-color);
+  font-size: 14px;
+}
+
+/*
+ * ===================================
+ * Form Elements
+ * ===================================
+ */
+
+.setting {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+label {
+  width: 150px;
+  font-weight: 500;
+}
+
+input[type="text"] {
+  width: 180px;
+  padding: 8px;
+  border: 1px solid var(--anki-border-color);
+  background-color: var(--anki-bg-color);
+  color: var(--anki-text-color);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  background-color: var(--anki-button-bg-color);
+  color: var(--anki-button-text-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: var(--anki-button-hover-bg-color);
+}
+
+#status {
+  margin-top: 15px;
+  min-height: 20px;
+  font-weight: bold;
+  color: var(--anki-success-color);
+}

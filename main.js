@@ -1,11 +1,15 @@
 // main.js (Main Entry Point)
 
 import { toggleUI } from './modules/ui.js';
-import { showToolbar, removeToolbar } from './modules/toolbar.js';
+import { showToolbar, removeToolbar, appendSelectedTextToField } from './modules/toolbar.js';
 import { processImage } from './modules/image.js';
 
 // --- Module-level state ---
 let capturedImage = { url: null, base64: null };
+let hotkeySettings = {
+  question: { altKey: true, key: 'Q' }, // Default Alt+Q
+  answer: { altKey: true, key: 'A' }  // Default Alt+A
+};
 
 // --- Global Event Listeners ---
 
@@ -13,17 +17,64 @@ let capturedImage = { url: null, base64: null };
 window.addEventListener('toggle_anki_clipper_ui', async (event) => {
   if (event.detail && event.detail.htmlUrl) {
     const uiContainer = await toggleUI(event.detail.htmlUrl);
-    // If UI was just created, attach event listeners to its elements
+    // If UI was just created, attach event listeners and request settings
     if (uiContainer) {
       attachUIEventListeners(uiContainer);
+      window.dispatchEvent(new CustomEvent('anki_request_settings'));
     }
+  }
+});
+
+// Listen for settings sent from the content script bridge
+window.addEventListener('anki_receive_settings', (event) => {
+  if (event.detail) {
+    hotkeySettings.question = parseHotkeyString(event.detail.questionHotkey);
+    hotkeySettings.answer = parseHotkeyString(event.detail.answerHotkey);
+  }
+});
+
+// Listen for keyboard events for hotkeys
+document.addEventListener('keydown', (e) => {
+  // Ignore hotkeys if typing in an input, textarea, or contenteditable element
+  const target = e.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+    return;
+  }
+  // Ignore if no text is selected or if the clipper is closed
+  if (window.getSelection().isCollapsed || !document.getElementById('anki-clipper-container')) {
+    return;
+  }
+
+  const checkHotkey = (setting) => {
+    // Get the physical key code, removing prefixes like 'Key' or 'Digit'
+    const code = e.code.startsWith('Key') ? e.code.substring(3) :
+      e.code.startsWith('Digit') ? e.code.substring(5) :
+        e.code;
+
+    return e.altKey === (setting.altKey || false) &&
+      e.ctrlKey === (setting.ctrlKey || false) &&
+      e.shiftKey === (setting.shiftKey || false) &&
+      e.metaKey === (setting.metaKey || false) && // Check for Cmd/Win key
+      code.toUpperCase() === setting.key.toUpperCase();
+  };
+
+  if (checkHotkey(hotkeySettings.question)) {
+    e.preventDefault();
+    appendSelectedTextToField('anki-question-field');
+  } else if (checkHotkey(hotkeySettings.answer)) {
+    e.preventDefault();
+    appendSelectedTextToField('anki-answer-field');
   }
 });
 
 // Listen for response from the content script bridge (global listener)
 window.addEventListener('anki_add_note_response', (event) => {
   const statusMsgSpan = document.getElementById('anki-status-msg');
+  const submitBtn = document.getElementById('anki-submit-btn'); // Get submit button here
+
   if (statusMsgSpan && event.detail) {
+    if (submitBtn) submitBtn.disabled = false; // Re-enable button
+
     if (event.detail.success) {
       statusMsgSpan.textContent = 'Card added successfully!';
       statusMsgSpan.style.color = 'green';
@@ -104,6 +155,24 @@ document.addEventListener('mousedown', (event) => {
 // --- Helper Functions ---
 
 /**
+ * Parses a hotkey string (e.g., "Alt + Q") into an object for event checking.
+ * @param {string} hotkeyString The string from storage.
+ * @returns {object} An object with boolean keys for modifiers and the main key.
+ */
+function parseHotkeyString(hotkeyString) {
+  const parts = hotkeyString.split(' + ');
+  const setting = {};
+  setting.key = parts.pop() || '';
+  setting.altKey = parts.includes('Alt');
+  setting.ctrlKey = parts.includes('Ctrl');
+  setting.shiftKey = parts.includes('Shift');
+  setting.metaKey = parts.includes('Cmd'); // Handle Cmd/Win key
+  return setting;
+}
+
+
+
+/**
  * Attaches event listeners to the dynamically created UI elements.
  * @param {HTMLElement} uiContainer The root element of the Anki Clipper UI.
  */
@@ -126,6 +195,8 @@ function attachUIEventListeners(uiContainer) {
 
   if (submitBtn && questionField && answerField && statusMsgSpan) {
     submitBtn.addEventListener('click', () => {
+      submitBtn.disabled = true; // Disable button on click
+
       const front = questionField.value.trim();
       const back = answerField.value.trim();
 
