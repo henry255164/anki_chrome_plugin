@@ -41,7 +41,8 @@
         "main.js",
         "modules/toolbar.js",
         "modules/ui.js",
-        "modules/image.js"
+        "modules/image.js",
+        "vendor/dompurify.min.js"
       ],
       "matches": [
         "<all_urls>"

@@ -32,7 +32,13 @@ async function createUI(htmlUrl) {
     if (!response.ok) {
       throw new Error(`Failed to fetch UI content: ${response.statusText}`);
     }
-    container.innerHTML = await response.text();
+    const html = await response.text();
+    const hasTT = !!window.trustedTypes;
+    const sanitized = DOMPurify.sanitize(
+      html,
+      hasTT ? { RETURN_TRUSTED_TYPE: true } : {}
+    );
+    container.innerHTML = sanitized;
     document.body.appendChild(container);
     return container; // Return the created container
   } catch (error) {

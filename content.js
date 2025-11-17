@@ -3,10 +3,15 @@
 // 1. Inject the main script as a module into the page.
 // This is the standard method for using ES modules in content scripts for Manifest V3.
 (function() {
-  const script = document.createElement('script');
-  script.type = 'module';
-  script.src = chrome.runtime.getURL('main.js');
-  (document.head || document.documentElement).appendChild(script);
+  const purifyScript = document.createElement('script');
+  purifyScript.src = chrome.runtime.getURL('vendor/dompurify.min.js');
+  purifyScript.onload = function() {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = chrome.runtime.getURL('main.js');
+      (document.head || document.documentElement).appendChild(script);
+  };
+  (document.head || document.documentElement).appendChild(purifyScript);
 })();
 
 // 2. Act as a bridge to pass messages from the background script to the page script.
